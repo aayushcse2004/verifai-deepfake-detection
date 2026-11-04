@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: verifai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=VerifAI
+      - API_V1_STR=/api/v1
+      - DATABASE_URL=sqlite:///./storage/verifai.db
+      - UPLOAD_DIR=./storage/uploads
+      - REPORT_DIR=./storage/reports
+      - FRAME_DIR=./storage/frames
+      - MAX_UPLOAD_SIZE_MB=250
+      - ALLOWED_EXTENSIONS=mp4,mov,avi,mkv,wav,mp3,m4a
+      - CORS_ORIGINS=["http://localhost:5173","http://localhost:3000","http://localhost"]
+      - DEVICE=cpu
+    volumes:
+      - ./storage:/app/storage
+      - ./models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: verifai-frontend
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
