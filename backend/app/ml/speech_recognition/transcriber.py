@@ -128,3 +128,4 @@ class WhisperTranscriber(BaseForensicAdapter):
 
 
 whisper_transcriber = WhisperTranscriber()
+

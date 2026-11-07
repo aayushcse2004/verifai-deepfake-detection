@@ -218,3 +218,4 @@ class SpeakerDiarizer(BaseForensicAdapter):
 
 
 speaker_diarizer = SpeakerDiarizer()
+

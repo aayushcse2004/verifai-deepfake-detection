@@ -8,3 +8,4 @@ class SystemSetting(Base):
     key = Column(String(100), primary_key=True)
     value = Column(Text, nullable=False)
     description = Column(String(255), nullable=True)
+

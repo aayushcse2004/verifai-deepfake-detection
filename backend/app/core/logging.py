@@ -15,3 +15,4 @@ def setup_logger(name: str = "VerifAI") -> logging.Logger:
     return logger
 
 logger = setup_logger()
+

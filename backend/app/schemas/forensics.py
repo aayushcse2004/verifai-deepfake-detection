@@ -49,3 +49,4 @@ class ForensicResultResponse(BaseModel):
     disclaimer: str = ""
 
     model_config = ConfigDict(from_attributes=True)
+

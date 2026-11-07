@@ -19,3 +19,4 @@ class MediaFile(Base):
 
     # Relationships
     jobs = relationship("AnalysisJob", back_populates="media", cascade="all, delete-orphan")
+

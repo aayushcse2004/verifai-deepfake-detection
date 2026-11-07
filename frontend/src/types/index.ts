@@ -112,3 +112,4 @@ export interface SystemSettings {
   total_analyses: number;
   system_status: string;
 }
+

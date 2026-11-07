@@ -276,3 +276,4 @@ class AnalysisWorker:
 
 
 analysis_worker = AnalysisWorker()
+

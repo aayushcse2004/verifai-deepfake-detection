@@ -140,3 +140,4 @@ def test_pdf_report_generation():
     finally:
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
+

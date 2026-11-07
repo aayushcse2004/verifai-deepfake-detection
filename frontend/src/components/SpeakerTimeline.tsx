@@ -103,3 +103,4 @@ export const SpeakerTimeline: React.FC<SpeakerTimelineProps> = ({ segments, dura
     </div>
   );
 };
+

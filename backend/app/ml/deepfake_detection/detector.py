@@ -198,3 +198,4 @@ class DeepfakeCnnDetector(BaseForensicAdapter):
 
 
 deepfake_cnn_detector = DeepfakeCnnDetector()
+

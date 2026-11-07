@@ -29,3 +29,4 @@ class EvidenceItem(Base):
     metadata_json = Column(JSON, default=dict)
 
     job = relationship("AnalysisJob", back_populates="evidence_items")
+

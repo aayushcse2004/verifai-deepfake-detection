@@ -210,3 +210,4 @@ class TalkNetDetector(BaseForensicAdapter):
 
 
 talknet_detector = TalkNetDetector()
+

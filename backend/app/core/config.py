@@ -72,3 +72,4 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(settings.REPORT_DIR, exist_ok=True)
 os.makedirs(settings.FRAME_DIR, exist_ok=True)
 os.makedirs(settings.MODEL_CHECKPOINTS_DIR, exist_ok=True)
+

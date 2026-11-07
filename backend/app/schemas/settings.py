@@ -21,3 +21,4 @@ class SettingsUpdateRequest(BaseModel):
     weight_lip_sync: Optional[float] = None
     weight_active_speaker: Optional[float] = None
     weight_audio: Optional[float] = None
+

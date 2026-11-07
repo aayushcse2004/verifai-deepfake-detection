@@ -19,3 +19,4 @@ class MediaUploadResponse(BaseModel):
     media: MediaFileResponse
     analysis_id: str
     message: str
+

@@ -41,3 +41,4 @@ export const ModelStatusBadge: React.FC<ModelStatusBadgeProps> = ({ mode, status
     </span>
   );
 };
+

@@ -40,3 +40,4 @@ class AnalysisStatusResponse(BaseModel):
 class AnalysisDetailResponse(BaseModel):
     job: AnalysisJobResponse
     result: Optional[ForensicResultResponse] = None
+

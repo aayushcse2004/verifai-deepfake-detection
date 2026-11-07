@@ -162,3 +162,4 @@ class AudioForensicsDetector(BaseForensicAdapter):
 
 
 audio_forensics_detector = AudioForensicsDetector()
+

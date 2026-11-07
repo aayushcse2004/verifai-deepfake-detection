@@ -53,3 +53,4 @@ def update_settings(update_data: SettingsUpdateRequest, db: Session = Depends(ge
         total_analyses=total,
         system_status="operational"
     )
+

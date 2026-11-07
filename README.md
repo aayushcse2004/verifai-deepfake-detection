@@ -36,6 +36,7 @@ flowchart TD
     subgraph Client ["Frontend (React 19 + TypeScript + Tailwind v4 + Recharts)"]
         UI_Dash[Forensics Dashboard]
         UI_Upload[Media Ingestion & Validation]
+        UI_Slider[Interactive Comparison Slider]
         UI_Monitor[Live 11-Stage Pipeline Telemetry]
         UI_Results[Forensic Results & Evidence Timeline]
         UI_Report[PDF Download & Export]
@@ -114,19 +115,23 @@ VerifAI/
 │   │       ├── audio_analysis/
 │   │       └── fusion/
 │   ├── Dockerfile
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── README.md                   # Backend documentation
 ├── frontend/
 │   ├── src/
-│   │   ├── components/             # Navbar, Footer, GaugeMeter, Timelines
+│   │   ├── components/             # Navbar, Footer, GaugeMeter, Slider, Timelines
 │   │   ├── pages/                  # Landing, Dashboard, Upload, Processing, Results, History, Settings
-│   │   ├── services/               # Axios typed API client
+│   │   ├── services/               # Axios typed API client & benchmark samples
+│   │   ├── utils/                  # Binary WAV audio generator
 │   │   ├── types/                  # TypeScript interface models
 │   │   └── App.tsx
 │   ├── Dockerfile
 │   ├── nginx.conf
-│   └── package.json
+│   ├── package.json
+│   └── README.md                   # Frontend documentation
 ├── models/
-│   └── checkpoints/                # Pretrained model weights
+│   ├── checkpoints/                # Checkpoints storage
+│   └── README.md                   # Checkpoints & model zoo documentation
 ├── storage/
 │   ├── uploads/                    # Secure media storage
 │   ├── reports/                    # Generated forensic PDF documents
@@ -135,6 +140,8 @@ VerifAI/
 │   ├── test_api.py                 # API and database tests
 │   └── test_ml_pipeline.py         # ML adapters and fusion tests
 ├── docker-compose.yml
+├── start_dev.bat                   # 1-click launcher for Windows
+├── start_dev.sh                    # 1-click launcher for Linux/macOS
 ├── .env.example
 ├── pytest.ini
 └── README.md
@@ -183,7 +190,22 @@ cd ..
 
 ## 6. Running the Application
 
-### Option 1: Direct Development Mode
+### Option 1: One-Click Development Launchers
+
+**On Windows:**
+```powershell
+.\start_dev.bat
+```
+
+**On Linux / macOS:**
+```bash
+chmod +x start_dev.sh
+./start_dev.sh
+```
+
+---
+
+### Option 2: Manual Terminal Execution
 
 **Terminal 1 — Run Backend:**
 ```powershell
@@ -201,7 +223,7 @@ npm run dev
 
 ---
 
-### Option 2: Docker Compose (Full Stack)
+### Option 3: Docker Compose (Full Stack)
 
 ```bash
 docker compose up --build
@@ -253,7 +275,18 @@ tests/test_ml_pipeline.py::test_pdf_report_generation PASSED             [100%]
 
 ---
 
-## 9. Forensic Scoring & Evidentiary Disclaimer
+## 9. Pre-Loaded Research Benchmark Controls
+
+To allow immediate evaluation during interviews or code review without requiring local deepfake video downloads, VerifAI includes 4 pre-configured benchmark controls on the `/upload` page:
+
+1. **Synthetic Face-Swap & Deepfake Dubbing (Expected: HIGH Risk)**: Simulates boundary blending residuals, 2D-FFT high frequency checkerboard patterns, and +180ms audio-visual synchronization offset.
+2. **Neural Vocoder AI Voice Clone (Expected: HIGH Risk)**: Simulates abrupt acoustic attenuation above 7.8 kHz and synthetic splice transitions.
+3. **Authentic Broadcast Press Briefing (Expected: LOW Risk)**: Clean natural capture with continuous skin pore gradients, concordant lip velocity (-18ms lag), and room reverberation.
+4. **Multi-Lingual Broadcast Dubbing (Expected: INCONCLUSIVE Risk)**: Genuine visual frames paired with translated vocal audio, isolating temporal dubbing without false-positive facial tampering flags.
+
+---
+
+## 10. Forensic Scoring & Evidentiary Disclaimer
 
 VerifAI generates an overall media determination into three standardized tiers:
 
@@ -265,6 +298,14 @@ VerifAI generates an overall media determination into three standardized tiers:
 
 ---
 
-## 10. License
+## 11. Sub-Project Documentation
+
+- [Backend Engine Documentation](backend/README.md)
+- [Frontend UI Architecture Documentation](frontend/README.md)
+- [Models & Checkpoints Documentation](models/README.md)
+
+---
+
+## 12. License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

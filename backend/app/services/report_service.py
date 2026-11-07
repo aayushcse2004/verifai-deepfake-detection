@@ -255,3 +255,4 @@ class ForensicReportService:
 
 
 report_service = ForensicReportService()
+

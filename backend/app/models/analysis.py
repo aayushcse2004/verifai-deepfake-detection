@@ -40,3 +40,4 @@ class AnalysisResult(Base):
     result_json = Column(JSON, default=dict)    # comprehensive detailed forensics
 
     job = relationship("AnalysisJob", back_populates="result")
+

@@ -50,3 +50,4 @@ def ensure_safe_path(base_dir: str, target_filename: str) -> Path:
             detail="Potential path traversal attempt detected."
         )
     return target_path
+

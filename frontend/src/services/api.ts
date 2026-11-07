@@ -88,3 +88,4 @@ export const getReportDownloadUrl = (analysisId: string): string => {
 };
 
 export default api;
+

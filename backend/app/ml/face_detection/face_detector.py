@@ -131,3 +131,4 @@ class FaceDetector:
 
 
 face_detector = FaceDetector()
+
