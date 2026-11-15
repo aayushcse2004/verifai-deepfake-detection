@@ -144,6 +144,63 @@ export const Dashboard: React.FC = () => {
         })}
       </div>
 
+      {/* Forensic Laboratories & Intelligence Quick Launch */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Link
+          to="/lab/video"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#06B6D4]/50 transition-all text-center group shadow-md"
+        >
+          <Video className="w-5 h-5 text-[#06B6D4] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">Video Lab</span>
+          <span className="text-[10px] text-[#94A3B8]">Frame BBoxes</span>
+        </Link>
+
+        <Link
+          to="/lab/audio"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#6366F1]/50 transition-all text-center group shadow-md"
+        >
+          <Mic className="w-5 h-5 text-[#6366F1] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">Audio Lab</span>
+          <span className="text-[10px] text-[#94A3B8]">PSD & Vocoder</span>
+        </Link>
+
+        <Link
+          to="/lab/sync"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#22C55E]/50 transition-all text-center group shadow-md"
+        >
+          <Activity className="w-5 h-5 text-[#22C55E] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">AV Sync Lab</span>
+          <span className="text-[10px] text-[#94A3B8]">SyncNet Offset</span>
+        </Link>
+
+        <Link
+          to="/lab/compare"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#F59E0B]/50 transition-all text-center group shadow-md"
+        >
+          <ShieldAlert className="w-5 h-5 text-[#F59E0B] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">Media Compare</span>
+          <span className="text-[10px] text-[#94A3B8]">pHash Diffing</span>
+        </Link>
+
+        <Link
+          to="/models"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#6366F1]/50 transition-all text-center group shadow-md"
+        >
+          <Cpu className="w-5 h-5 text-[#6366F1] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">Model Registry</span>
+          <span className="text-[10px] text-[#94A3B8]">Diagnostics</span>
+        </Link>
+
+        <Link
+          to="/system"
+          className="p-3.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#06B6D4]/50 transition-all text-center group shadow-md"
+        >
+          <Clock className="w-5 h-5 text-[#06B6D4] mx-auto mb-1.5 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-white block">GPU Monitor</span>
+          <span className="text-[10px] text-[#94A3B8]">CUDA Metrics</span>
+        </Link>
+      </div>
+
       {/* Model Health Indicators */}
       <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">

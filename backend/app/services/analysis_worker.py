@@ -13,6 +13,7 @@ from backend.app.core.logging import logger
 from backend.app.core.security import calculate_sha256
 from backend.app.services.media_service import media_service
 from backend.app.services.report_service import report_service
+from backend.app.services.audit_service import audit_service
 
 # ML Adapters
 from backend.app.ml.face_detection.face_detector import face_detector
@@ -261,6 +262,22 @@ class AnalysisWorker:
             job.completed_at = datetime.now(timezone.utc)
             db.commit()
 
+            # Record final outcome in digital forensics Chain of Custody
+            audit_service.log_event(
+                db,
+                event_type="STAGE_COMPLETE",
+                action=f"Investigation concluded with verdict '{fusion_result['overall_assessment']}' (Calibrated score: {fusion_result['overall_score']:.2f}).",
+                investigation_id=job.id,
+                file_hash=file_hash,
+                status="SUCCESS",
+                details={
+                    "assessment": fusion_result["overall_assessment"],
+                    "overall_score": fusion_result["overall_score"],
+                    "model_statuses": fusion_result.get("model_statuses", {})
+                },
+                actor="Forensic Pipeline Coordinator"
+            )
+
             self._update_stage(db, job, "Completed", 100, f"Forensic analysis concluded: {fusion_result['overall_assessment']}.")
             logger.info(f"Job {analysis_id} finished successfully.")
 
@@ -271,6 +288,15 @@ class AnalysisWorker:
                 job.error_message = str(e)
                 job.completed_at = datetime.now(timezone.utc)
                 db.commit()
+                audit_service.log_event(
+                    db,
+                    event_type="FAILED",
+                    action=f"Investigation failed during stage '{job.current_stage}': {str(e)}",
+                    investigation_id=job.id,
+                    status="FAILURE",
+                    details={"error": str(e)},
+                    actor="Forensic Pipeline Coordinator"
+                )
         finally:
             db.close()
 

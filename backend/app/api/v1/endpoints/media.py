@@ -9,6 +9,7 @@ from backend.app.models.analysis import AnalysisJob
 from backend.app.schemas.media import MediaUploadResponse, MediaFileResponse
 from backend.app.core.config import settings
 from backend.app.core.security import validate_file_extension, generate_secure_filename, calculate_sha256
+from backend.app.services.audit_service import audit_service
 from backend.app.core.logging import logger
 
 router = APIRouter()
@@ -20,8 +21,8 @@ def upload_media(
     db: Session = Depends(get_db)
 ):
     """
-    Securely upload media file (video or audio), validate format and size,
-    compute SHA-256 digest, and initialize an AnalysisJob.
+    Securely upload media file (video, audio, or static image), validate format and size,
+    compute cryptographic SHA-256 digest, create chain-of-custody audit log, and initialize an AnalysisJob.
     """
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No filename provided.")
@@ -57,8 +58,14 @@ def upload_media(
     file_hash = calculate_sha256(dest_path)
 
     # Determine file category
+    image_exts = {"png", "jpg", "jpeg", "webp"}
     video_exts = {"mp4", "mov", "avi", "mkv"}
-    file_type = "video" if ext in video_exts else "audio"
+    if ext in image_exts:
+        file_type = "image"
+    elif ext in video_exts:
+        file_type = "video"
+    else:
+        file_type = "audio"
 
     # Persist MediaFile record
     media_record = MediaFile(
@@ -73,27 +80,52 @@ def upload_media(
     db.flush()
 
     # Create associated AnalysisJob
-    job_record = AnalysisJob(
+    job = AnalysisJob(
         media_id=media_record.id,
         status="PENDING",
         current_stage="Uploaded",
         progress=0,
         stage_logs=[{
-            "stage": "Upload",
+            "stage": "Ingestion",
             "progress": 0,
             "timestamp": "00:00:00",
-            "message": f"File '{file.filename}' uploaded successfully ({file_size / (1024*1024):.2f} MB)."
+            "message": f"Media ingested securely ({file_size} bytes, SHA-256: {file_hash[:16]}...)"
         }]
     )
-    db.add(job_record)
+    db.add(job)
     db.commit()
+    db.refresh(job)
     db.refresh(media_record)
-    db.refresh(job_record)
 
-    logger.info(f"Uploaded media {media_record.id} -> Job {job_record.id}")
+    # Record in digital forensics Chain of Custody
+    audit_service.log_event(
+        db,
+        event_type="UPLOAD",
+        action=f"Ingested media asset '{file.filename}' ({file_size} bytes, type={file_type}) with SHA-256 digest {file_hash[:16]}...",
+        investigation_id=job.id,
+        file_hash=file_hash,
+        status="SUCCESS",
+        details={
+            "original_filename": file.filename,
+            "file_size": file_size,
+            "file_type": file_type,
+            "sha256": file_hash
+        },
+        actor="Forensic Ingestion Gateway"
+    )
+
+    logger.info(f"Uploaded {file.filename} -> {secure_name} (Job: {job.id}, Hash: {file_hash[:8]})")
 
     return MediaUploadResponse(
-        media=MediaFileResponse.model_validate(media_record),
-        analysis_id=job_record.id,
-        message="Media uploaded and ready for forensic analysis."
+        analysis_id=job.id,
+        media=MediaFileResponse(
+            id=media_record.id,
+            original_filename=media_record.original_filename,
+            file_type=media_record.file_type,
+            file_size=media_record.file_size,
+            file_hash=media_record.file_hash,
+            duration=media_record.duration,
+            upload_timestamp=media_record.upload_timestamp
+        ),
+        message="Media file uploaded and registered in Chain of Custody successfully."
     )

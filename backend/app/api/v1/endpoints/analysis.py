@@ -1,8 +1,9 @@
 import os
 import shutil
 import threading
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -14,6 +15,7 @@ from backend.app.models.evidence import SpeakerSegment, EvidenceItem
 from backend.app.schemas.analysis import AnalysisStatusResponse, AnalysisJobResponse
 from backend.app.schemas.forensics import ForensicResultResponse, SpeakerSegmentSchema, EvidenceItemSchema
 from backend.app.services.analysis_worker import analysis_worker
+from backend.app.services.audit_service import audit_service
 from backend.app.core.config import settings
 from backend.app.core.logging import logger
 
@@ -35,6 +37,17 @@ def start_analysis(
     if job.status == "PROCESSING":
         return {"message": "Analysis is already running.", "analysis_id": analysis_id, "status": job.status}
 
+    # Record in audit trail
+    audit_service.log_event(
+        db,
+        event_type="ANALYSIS_START",
+        action=f"Initialized multimodal forensic pipeline for investigation {analysis_id[:8]}...",
+        investigation_id=analysis_id,
+        status="SUCCESS",
+        details={"job_id": analysis_id},
+        actor="Forensic Dispatcher"
+    )
+
     # Launch background thread for pipeline execution
     worker_thread = threading.Thread(
         target=analysis_worker.run_pipeline,
@@ -45,6 +58,75 @@ def start_analysis(
 
     return {
         "message": "Forensic analysis pipeline initialized.",
+        "analysis_id": analysis_id,
+        "status": "PROCESSING"
+    }
+
+
+@router.post("/{analysis_id}/cancel")
+def cancel_analysis(
+    analysis_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Cancel an in-flight or pending forensic analysis job.
+    """
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == analysis_id).first()
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis job not found.")
+
+    if job.status in ["COMPLETED", "FAILED"]:
+        return {"message": f"Job is already {job.status.lower()}; cannot cancel.", "status": job.status}
+
+    job.status = "CANCELLED"
+    job.current_stage = "Cancelled by Operator"
+    job.completed_at = datetime.now(timezone.utc)
+    db.commit()
+
+    audit_service.log_event(
+        db,
+        event_type="CANCELLED",
+        action=f"Investigation {analysis_id[:8]} cancelled by operator request.",
+        investigation_id=analysis_id,
+        status="WARNING",
+        details={"previous_stage": job.current_stage, "progress": job.progress},
+        actor="Forensic Operator"
+    )
+
+    return {
+        "message": "Investigation has been cancelled.",
+        "analysis_id": analysis_id,
+        "status": "CANCELLED"
+    }
+
+
+@router.post("/{analysis_id}/retry")
+def retry_analysis(
+    analysis_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Retry a failed or cancelled analysis job.
+    """
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == analysis_id).first()
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis job not found.")
+
+    job.status = "PENDING"
+    job.current_stage = "Re-initialized"
+    job.progress = 0
+    job.error_message = None
+    db.commit()
+
+    worker_thread = threading.Thread(
+        target=analysis_worker.run_pipeline,
+        args=(analysis_id,),
+        daemon=True
+    )
+    worker_thread.start()
+
+    return {
+        "message": "Forensic pipeline re-launched.",
         "analysis_id": analysis_id,
         "status": "PROCESSING"
     }
@@ -123,12 +205,20 @@ def get_analysis_results(
 def get_analysis_history(
     limit: int = 50,
     offset: int = 0,
+    search: Optional[str] = None,
+    file_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve historical analyses ordered by newest first.
+    Retrieve historical analyses ordered by newest first with optional search and type filters.
     """
-    jobs = db.query(AnalysisJob).order_by(desc(AnalysisJob.created_at)).offset(offset).limit(limit).all()
+    query = db.query(AnalysisJob).join(MediaFile)
+    if search:
+        query = query.filter(MediaFile.original_filename.ilike(f"%{search}%"))
+    if file_type:
+        query = query.filter(MediaFile.file_type == file_type)
+
+    jobs = query.order_by(desc(AnalysisJob.created_at)).offset(offset).limit(limit).all()
     return [AnalysisJobResponse.model_validate(j) for j in jobs]
 
 
@@ -147,6 +237,15 @@ def download_forensic_report(
     report_path = os.path.join(settings.REPORT_DIR, f"{analysis_id}.pdf")
     if not os.path.exists(report_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Forensic PDF report not yet generated.")
+
+    audit_service.log_event(
+        db,
+        event_type="REPORT_DOWNLOADED",
+        action=f"Forensic PDF verification report retrieved for investigation {analysis_id[:8]}...",
+        investigation_id=analysis_id,
+        status="SUCCESS",
+        actor="Forensic Examiner / Auditor"
+    )
 
     return FileResponse(
         path=report_path,
@@ -168,6 +267,18 @@ def delete_analysis(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis job not found.")
 
     media = db.query(MediaFile).filter(MediaFile.id == job.media_id).first()
+
+    # Log in audit trail before deleting media record
+    audit_service.log_event(
+        db,
+        event_type="DELETED",
+        action=f"Purged investigation {analysis_id[:8]} and associated forensic media.",
+        investigation_id=analysis_id,
+        file_hash=media.file_hash if media else None,
+        status="SUCCESS",
+        details={"deleted_filename": media.original_filename if media else "Unknown"},
+        actor="Forensic Administrator"
+    )
 
     # 1. Delete media file on disk
     if media and media.stored_filename:
@@ -202,4 +313,3 @@ def delete_analysis(
     db.commit()
 
     return {"message": f"Analysis {analysis_id} and associated storage deleted successfully."}
-

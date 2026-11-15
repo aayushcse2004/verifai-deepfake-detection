@@ -15,15 +15,17 @@ import {
   Radio,
   Eye,
   Scan,
+  XCircle,
+  RotateCcw
 } from 'lucide-react';
-import { getAnalysisStatus } from '../services/api';
+import { getAnalysisStatus, cancelAnalysis, retryAnalysis } from '../services/api';
 import { StageLog } from '../types';
 
 export const ProcessingPage: React.FC = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
 
-  const [status, setStatus] = useState<'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'>('PENDING');
+  const [status, setStatus] = useState<'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'>('PENDING');
   const [currentStage, setCurrentStage] = useState<string>('Initializing');
   const [progress, setProgress] = useState<number>(0);
   const [logs, setLogs] = useState<StageLog[]>([]);
@@ -130,12 +132,40 @@ export const ProcessingPage: React.FC = () => {
             Open Forensic Results
             <ArrowRight className="w-4 h-4" />
           </Link>
+        ) : status === 'FAILED' || status === 'CANCELLED' ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                if (analysisId) {
+                  await retryAnalysis(analysisId);
+                  setStatus('PROCESSING');
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-bold transition-all shadow-md shadow-[#6366F1]/20"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Retry Analysis
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-3 font-mono text-xs text-slate-400 bg-[#111827] px-4 py-2 rounded-xl border border-[#1E293B]">
             <Clock className="w-4 h-4 text-[#06B6D4]" />
             <span>Elapsed: <strong className="text-white">{formatTime(elapsedSeconds)}</strong></span>
             <span>•</span>
             <span className="text-[#22C55E] animate-pulse">Running</span>
+            <span>•</span>
+            <button
+              onClick={async () => {
+                if (analysisId) {
+                  await cancelAnalysis(analysisId);
+                  setStatus('CANCELLED');
+                }
+              }}
+              className="text-[#EF4444] hover:underline flex items-center gap-1 font-sans"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Cancel
+            </button>
           </div>
         )}
       </div>

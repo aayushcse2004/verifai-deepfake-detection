@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Upload constraints
     MAX_UPLOAD_SIZE_MB: int = 250
-    ALLOWED_EXTENSIONS: str = "mp4,mov,avi,mkv,wav,mp3,m4a"
+    ALLOWED_EXTENSIONS: str = "mp4,mov,avi,mkv,wav,mp3,m4a,png,jpg,jpeg,webp"
 
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = [
@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     ]
 
     # AI/ML
-    DEVICE: str = "cpu"
-    ENABLE_GPU: bool = False
+    DEVICE: str = "cuda"
+    ENABLE_GPU: bool = True
     WHISPER_MODEL: str = "base"
     MODEL_CHECKPOINTS_DIR: str = "./models/checkpoints"
 

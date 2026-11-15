@@ -248,6 +248,27 @@ class ForensicReportService:
 
         story.append(Spacer(1, 4))
         story.append(Paragraph(fusion_result.get("disclaimer", ""), disclaimer_p))
+        story.append(Spacer(1, 10))
+
+        # 8. Chain of Custody & Examiner Attestation Block
+        story.append(Paragraph("6. Chain of Custody & Examiner Attestation", section_h))
+        sign_data = [
+            [
+                Paragraph("<b>Forensic System:</b> VerifAI Automated Platform", body_p),
+                Paragraph(f"<b>Integrity SHA-256:</b> <font face='Courier' size=7>{media_info.get('file_hash', 'N/A')[:32]}...</font>", body_p)
+            ],
+            [
+                Paragraph("<b>Audit Status:</b> Logged in Immutable Audit Trail", body_p),
+                Paragraph("<b>Verification Signature:</b> ___________________________", body_p)
+            ]
+        ]
+        t_sign = Table(sign_data, colWidths=[270, 270])
+        t_sign.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8FAFC')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#CBD5E1')),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(t_sign)
 
         doc.build(story)
         logger.info(f"Generated forensic PDF report: {output_pdf_path}")

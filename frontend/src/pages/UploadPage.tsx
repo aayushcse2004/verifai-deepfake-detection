@@ -4,6 +4,7 @@ import {
   Upload,
   FileVideo,
   FileAudio,
+  Image as ImageIcon,
   CheckCircle2,
   AlertTriangle,
   Play,
@@ -25,7 +26,7 @@ export const UploadPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'upload' | 'benchmark'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<'video' | 'audio' | null>(null);
+  const [fileType, setFileType] = useState<'video' | 'audio' | 'image' | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -33,7 +34,7 @@ export const UploadPage: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState<string>('balanced');
   const [fileHashPreview, setFileHashPreview] = useState<string>('');
 
-  const allowedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'wav', 'mp3', 'm4a'];
+  const allowedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'wav', 'mp3', 'm4a', 'png', 'jpg', 'jpeg', 'webp'];
   const maxSizeBytes = 250 * 1024 * 1024; // 250MB
 
   const computeSha256Quick = async (f: File) => {
@@ -53,7 +54,7 @@ export const UploadPage: React.FC = () => {
     const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
 
     if (!allowedExtensions.includes(ext)) {
-      setError(`Unsupported file format '.${ext}'. Permitted: MP4, MOV, AVI, MKV, WAV, MP3, M4A.`);
+      setError(`Unsupported file format '.${ext}'. Permitted: MP4, MOV, AVI, MKV, WAV, MP3, M4A, PNG, JPG, WEBP.`);
       return;
     }
 
@@ -64,7 +65,8 @@ export const UploadPage: React.FC = () => {
 
     setFile(selectedFile);
     const isVid = ['mp4', 'mov', 'avi', 'mkv'].includes(ext);
-    setFileType(isVid ? 'video' : 'audio');
+    const isImg = ['png', 'jpg', 'jpeg', 'webp'].includes(ext);
+    setFileType(isVid ? 'video' : isImg ? 'image' : 'audio');
 
     // Create local object URL for preview
     const objectUrl = URL.createObjectURL(selectedFile);
@@ -263,7 +265,7 @@ export const UploadPage: React.FC = () => {
             ref={fileInputRef}
             type="file"
             className="hidden"
-            accept=".mp4,.mov,.avi,.mkv,.wav,.mp3,.m4a"
+            accept=".mp4,.mov,.avi,.mkv,.wav,.mp3,.m4a,.png,.jpg,.jpeg,.webp"
             onChange={(e) => {
               if (e.target.files && e.target.files[0]) {
                 handleFileSelection(e.target.files[0]);
@@ -276,7 +278,7 @@ export const UploadPage: React.FC = () => {
           </div>
 
           <h3 className="text-lg font-bold text-white mb-1">
-            Drag and drop your audio or video file here
+            Drag and drop your video, audio, or forensic image file here
           </h3>
           <p className="text-sm text-[#94A3B8] mb-4">
             or <span className="text-[#06B6D4] font-semibold underline">browse files</span> on your device
@@ -285,6 +287,7 @@ export const UploadPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-slate-400">
             <span className="px-2.5 py-1 rounded bg-[#080D18] border border-[#1E293B]">Video: MP4, MOV, AVI, MKV</span>
             <span className="px-2.5 py-1 rounded bg-[#080D18] border border-[#1E293B]">Audio: WAV, MP3, M4A</span>
+            <span className="px-2.5 py-1 rounded bg-[#080D18] border border-[#1E293B]">Image: PNG, JPG, WEBP</span>
             <span className="px-2.5 py-1 rounded bg-[#080D18] border border-[#1E293B]">Max Size: 250 MB</span>
           </div>
         </div>
@@ -296,7 +299,13 @@ export const UploadPage: React.FC = () => {
           <div className="flex items-center justify-between border-b border-[#1E293B] pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#6366F1]/10 flex items-center justify-center text-[#6366F1]">
-                {fileType === 'video' ? <FileVideo className="w-5 h-5" /> : <FileAudio className="w-5 h-5" />}
+                {fileType === 'video' ? (
+                  <FileVideo className="w-5 h-5" />
+                ) : fileType === 'image' ? (
+                  <ImageIcon className="w-5 h-5 text-[#06B6D4]" />
+                ) : (
+                  <FileAudio className="w-5 h-5" />
+                )}
               </div>
               <div>
                 <h4 className="text-base font-bold text-white">{file.name}</h4>
@@ -331,6 +340,12 @@ export const UploadPage: React.FC = () => {
               <video
                 src={previewUrl}
                 controls
+                className="max-h-72 w-full object-contain rounded-lg"
+              />
+            ) : fileType === 'image' && previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Image Preview"
                 className="max-h-72 w-full object-contain rounded-lg"
               />
             ) : fileType === 'audio' && previewUrl ? (

@@ -1,7 +1,7 @@
 export interface MediaFile {
   id: string;
   original_filename: string;
-  file_type: 'video' | 'audio';
+  file_type: 'video' | 'audio' | 'image';
   file_size: number;
   duration?: number;
   file_hash: string;
@@ -18,7 +18,7 @@ export interface StageLog {
 export interface AnalysisJob {
   id: string;
   media_id: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   current_stage: string;
   progress: number;
   created_at: string;
@@ -113,3 +113,133 @@ export interface SystemSettings {
   system_status: string;
 }
 
+export interface SystemMonitorData {
+  status: string;
+  cpu: {
+    utilization_pct: number;
+    cores_logical: number;
+    cores_physical: number;
+  };
+  memory: {
+    total_gb: number;
+    used_gb: number;
+    utilization_pct: number;
+  };
+  disk: {
+    total_gb: number;
+    used_gb: number;
+    free_gb: number;
+    utilization_pct: number;
+    storage_path: string;
+  };
+  gpu: {
+    available: boolean;
+    name: string;
+    driver_version: string;
+    utilization_pct: number;
+    memory_used_mb: number;
+    memory_total_mb: number;
+    memory_usage_pct: number;
+    temperature_c: number;
+    cuda_compatible: boolean;
+  };
+  workload: {
+    active_investigations: number;
+    queued_investigations: number;
+    completed_investigations: number;
+    failed_investigations: number;
+    total_processed: number;
+  };
+}
+
+export interface ModelRegistryItem {
+  id: string;
+  name: string;
+  version: string;
+  type: string;
+  source: string;
+  license: string;
+  checkpoint_file: string;
+  checkpoint_available: boolean;
+  device: string;
+  loading_status: string;
+  supported_formats: string[];
+  preprocessing: string;
+  benchmark_accuracy: string;
+  last_executed: string;
+}
+
+export interface BenchmarkDataset {
+  id: string;
+  dataset_name: string;
+  source: string;
+  license: string;
+  modality: string;
+  splits: Record<string, number>;
+  methods_evaluated: string[];
+  metric_type: string;
+  metrics: {
+    accuracy: number;
+    precision: number;
+    recall: number;
+    f1_score: number;
+    roc_auc: number;
+    confusion_matrix: {
+      true_positive: number;
+      false_positive: number;
+      true_negative: number;
+      false_negative: number;
+    };
+    avg_latency_ms: number;
+    peak_vram_mb: number;
+  };
+  notes: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  timestamp: string;
+  event_type: string;
+  investigation_id?: string;
+  file_hash?: string;
+  actor: string;
+  action: string;
+  status: 'SUCCESS' | 'WARNING' | 'FAILURE';
+  details?: Record<string, any>;
+}
+
+export interface ComparisonResult {
+  verdict: string;
+  hash_match: boolean;
+  asset_a: {
+    name: string;
+    sha256: string;
+    size_bytes: number;
+    metadata: Record<string, any>;
+    phash?: string;
+  };
+  asset_b: {
+    name: string;
+    sha256: string;
+    size_bytes: number;
+    metadata: Record<string, any>;
+    phash?: string;
+  };
+  visual_similarity?: {
+    phash_a: string;
+    phash_b: string;
+    hamming_distance: number;
+    similarity_pct: number;
+    interpretation: string;
+  };
+  audio_comparison?: {
+    comparable: boolean;
+    reason?: string;
+    sample_rate?: number;
+    correlation?: number;
+    acoustic_similarity_pct?: number;
+    identical_audio?: boolean;
+  };
+  differences: string[];
+  summary: string;
+}

@@ -3,6 +3,7 @@ from backend.app.models.media import MediaFile
 from backend.app.models.analysis import AnalysisJob, AnalysisResult
 from backend.app.models.evidence import SpeakerSegment, EvidenceItem
 from backend.app.models.settings import SystemSetting
+from backend.app.models.audit import AuditLog
 
 __all__ = [
     "Base",
@@ -12,9 +13,9 @@ __all__ = [
     "AnalysisResult",
     "SpeakerSegment",
     "EvidenceItem",
-    "SystemSetting"
+    "SystemSetting",
+    "AuditLog"
 ]
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-

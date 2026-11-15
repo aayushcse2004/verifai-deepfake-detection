@@ -5,11 +5,13 @@ import {
   Search,
   Video,
   Mic,
+  Image as ImageIcon,
   Trash2,
   FileDown,
   Eye,
   RefreshCw,
   AlertCircle,
+  FlaskConical
 } from 'lucide-react';
 import { getAnalysisHistory, deleteAnalysis, getReportDownloadUrl } from '../services/api';
 import { AnalysisJob } from '../types';
@@ -120,6 +122,10 @@ export const HistoryPage: React.FC = () => {
                       {item.media?.file_type === 'video' ? (
                         <span className="flex items-center gap-1 text-[#06B6D4]">
                           <Video className="w-3.5 h-3.5" /> Video
+                        </span>
+                      ) : item.media?.file_type === 'image' ? (
+                        <span className="flex items-center gap-1 text-[#F59E0B]">
+                          <ImageIcon className="w-3.5 h-3.5" /> Image
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 text-[#22C55E]">

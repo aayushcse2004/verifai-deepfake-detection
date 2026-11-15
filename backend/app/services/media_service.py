@@ -2,6 +2,7 @@ import os
 import subprocess
 from typing import Dict, Any, List, Optional
 import cv2
+import numpy as np
 import imageio_ffmpeg
 from backend.app.core.logging import logger
 
@@ -11,7 +12,7 @@ class MediaService:
         self.ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
 
     def get_metadata(self, file_path: str) -> Dict[str, Any]:
-        """Extract metadata for video or audio file using OpenCV and FFmpeg probe."""
+        """Extract metadata for video, audio, or static image file."""
         metadata = {
             "duration": 0.0,
             "width": 0,
@@ -20,11 +21,27 @@ class MediaService:
             "total_frames": 0,
             "has_video": False,
             "has_audio": False,
+            "is_image": False,
             "codec": "unknown"
         }
 
         ext = os.path.splitext(file_path)[1].lower().lstrip(".")
+        is_image = ext in {"png", "jpg", "jpeg", "webp"}
         is_audio_only = ext in {"wav", "mp3", "m4a", "aac", "flac"}
+
+        if is_image:
+            img = cv2.imread(file_path)
+            if img is not None:
+                h, w = img.shape[:2]
+                metadata["has_video"] = True
+                metadata["is_image"] = True
+                metadata["width"] = w
+                metadata["height"] = h
+                metadata["total_frames"] = 1
+                metadata["fps"] = 1.0
+                metadata["duration"] = 0.0
+                metadata["codec"] = ext.upper()
+                return metadata
 
         # Try OpenCV only for video containers
         if not is_audio_only:
@@ -55,7 +72,7 @@ class MediaService:
                 metadata["has_audio"] = True
 
             # If duration wasn't obtained from OpenCV (e.g. pure audio or non-standard container)
-            if metadata["duration"] == 0.0:
+            if metadata["duration"] == 0.0 and not is_image:
                 import re
                 dur_match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", result.stderr)
                 if dur_match:
@@ -69,8 +86,12 @@ class MediaService:
     def extract_audio(self, media_path: str, output_wav: str, sample_rate: int = 16000) -> bool:
         """
         Extract audio track normalized to 16kHz mono 16-bit PCM WAV.
-        Works for both video containers (MP4, MKV, MOV, AVI) and audio formats (MP3, M4A, WAV).
+        Works for video containers and audio files.
         """
+        ext = os.path.splitext(media_path)[1].lower().lstrip(".")
+        if ext in {"png", "jpg", "jpeg", "webp"}:
+            return False
+
         try:
             os.makedirs(os.path.dirname(output_wav), exist_ok=True)
             cmd = [
@@ -88,7 +109,7 @@ class MediaService:
             if res.returncode == 0 and os.path.exists(output_wav) and os.path.getsize(output_wav) > 0:
                 return True
             else:
-                logger.warning(f"Audio extraction produced empty file or failed: {res.stderr.decode('utf-8', errors='ignore')}")
+                logger.warning(f"Audio extraction produced empty file or failed for {media_path}")
                 return False
         except Exception as e:
             logger.error(f"Error extracting audio from {media_path}: {e}")
@@ -103,11 +124,28 @@ class MediaService:
     ) -> List[Dict[str, Any]]:
         """
         Extract sample frames at configurable intervals.
-        Avoids loading full video into RAM by streaming sequentially.
-        Returns list of {frame_idx, timestamp, path, width, height}.
+        Handles both video containers and static images.
         """
         os.makedirs(output_dir, exist_ok=True)
         extracted = []
+
+        ext = os.path.splitext(video_path)[1].lower().lstrip(".")
+        if ext in {"png", "jpg", "jpeg", "webp"}:
+            img = cv2.imread(video_path)
+            if img is not None:
+                h, w = img.shape[:2]
+                frame_filename = "frame_0000_0.00s.jpg"
+                frame_path = os.path.join(output_dir, frame_filename)
+                cv2.imwrite(frame_path, img)
+                return [{
+                    "frame_index": 0,
+                    "sample_index": 0,
+                    "timestamp": 0.0,
+                    "path": frame_path,
+                    "width": w,
+                    "height": h
+                }]
+            return extracted
 
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
@@ -149,6 +187,15 @@ class MediaService:
 
     def generate_thumbnail(self, video_path: str, output_path: str) -> Optional[str]:
         """Extract first valid frame as thumbnail."""
+        ext = os.path.splitext(video_path)[1].lower().lstrip(".")
+        if ext in {"png", "jpg", "jpeg", "webp"}:
+            img = cv2.imread(video_path)
+            if img is not None:
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                cv2.imwrite(output_path, img)
+                return output_path
+            return None
+
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             return None
@@ -159,6 +206,50 @@ class MediaService:
             cv2.imwrite(output_path, frame)
             return output_path
         return None
+
+    def compute_phash(self, file_path: str) -> Optional[str]:
+        """
+        Compute 64-bit Perceptual Hash (pHash) via 2D Discrete Cosine Transform (DCT)
+        on 32x32 grayscale luminance representation.
+        """
+        try:
+            ext = os.path.splitext(file_path)[1].lower().lstrip(".")
+            if ext in {"wav", "mp3", "m4a", "aac", "flac"}:
+                return None
+
+            img = None
+            if ext in {"png", "jpg", "jpeg", "webp"}:
+                img = cv2.imread(file_path)
+            else:
+                cap = cv2.VideoCapture(file_path)
+                if cap.isOpened():
+                    ret, frame = cap.read()
+                    cap.release()
+                    if ret:
+                        img = frame
+
+            if img is None:
+                return None
+
+            # 1. Resize to 32x32 and convert to float32 grayscale
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            resized = cv2.resize(gray, (32, 32), interpolation=cv2.INTER_AREA).astype(np.float32)
+
+            # 2. Compute 2D DCT
+            dct = cv2.dct(resized)
+
+            # 3. Extract top-left 8x8 DCT coefficients (excluding DC component at [0,0])
+            dct_low = dct[:8, :8]
+            dct_vals = dct_low.flatten()
+            median_val = float(np.median(dct_vals[1:]))
+
+            # 4. Generate 64-bit hash
+            bits = "".join(["1" if val > median_val else "0" for val in dct_vals])
+            hex_str = f"{int(bits, 2):016x}"
+            return hex_str
+        except Exception as e:
+            logger.warning(f"Error computing pHash for {file_path}: {e}")
+            return None
 
 
 media_service = MediaService()

@@ -1,311 +1,237 @@
-# VerifAI – Multimodal Deepfake Detection & Media Verification Platform
+# VerifAI – Multimodal Deepfake Detection & Digital Forensics Platform
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.5+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![CUDA](https://img.shields.io/badge/CUDA-12.1%2F12.7-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8.3+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**VerifAI** is a production-quality multimodal media forensics platform designed for high-assurance deepfake detection and media authenticity analysis. Unlike single-point classifiers that yield brittle predictions, VerifAI combines computer vision, active speaker tracking, speech acoustics, lip synchronization, and speaker diarization into a unified, evidence-based Bayesian/heuristic fusion engine.
+**VerifAI** is an advanced, production-quality digital media verification and multimodal deepfake forensics platform. Engineered for cybersecurity researchers, intelligence analysts, and academic evaluators, VerifAI unifies computer vision, acoustic forensics, speech recognition, active speaker concordance, and lip synchronization into a calibrated, evidence-based Bayesian risk assessment engine.
 
 ---
 
-## 1. Core Forensic Pipeline & Capabilities
+## 1. System Navigation & Core Modules
 
-The platform implements an end-to-end 11-stage forensic inspection pipeline:
+VerifAI is organized into four digital forensics domains:
 
-1. **Cryptographic Validation & Hashing**: Computes SHA-256 digests and extracts stream metadata (FPS, dimensions, sample rates).
-2. **Audio Extraction & Normalization**: Uses FFmpeg to isolate and normalize audio to 16kHz mono 16-bit PCM WAV.
-3. **Frame Sampling**: Sequentially samples video frames at configurable intervals to avoid high RAM memory consumption.
-4. **Face Detection & Spatial Tracking**: OpenCV Haar & DNN face detection with spatial tracking across consecutive timestamps, generating isolated face crops.
-5. **CNN Facial Manipulation Detection**: Analyzes spatial frequency residuals (2D-FFT), Laplacian sharpness, and color channel inconsistencies to detect synthetic GAN/diffusion borders.
-6. **SyncNet Audio-Visual Synchrony**: Correlates mouth ROI optical motion velocity with acoustic speech RMS envelopes to isolate temporal lag offsets and dubbing.
-7. **TalkNet Active Speaker Association**: Correlates vocal bursts with visible facial movement across multi-subject scenes to identify out-of-sync voiceovers or puppetry.
-8. **pyannote Speaker Diarization**: Clusters acoustic speech turns (`SPEAKER_00`, `SPEAKER_01`) via spectral centroid and energy profiling.
-9. **OpenAI Whisper Speech Recognition**: Transcribes spoken dialogue with timestamped alignment for contextual consistency checks.
-10. **Acoustic Spectral Forensics**: Welch Power Spectral Density (PSD) analysis, high-frequency neural vocoder cutoff detection, and RMS splice localization.
-11. **Multimodal Evidence Fusion & PDF Report**: Combines cross-modal indicators with missing-modality compensation to produce an investigation-grade PDF verification report.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        VERIFAI FORENSIC DOMAINS                        │
+├──────────────────┬──────────────────┬──────────────────┬───────────────┤
+│    WORKSPACE     │  FORENSIC LABS   │ AI INTELLIGENCE  │  MANAGEMENT   │
+├──────────────────┼──────────────────┼──────────────────┼───────────────┤
+│ • Command Center │ • Video Lab      │ • Model Registry │ • Reports     │
+│ • New Ingestion  │ • Audio Lab      │ • Evaluation Ctr │ • Audit Trail │
+│ • Case History   │ • AV Sync Lab    │ • System Monitor │ • Settings    │
+│ • Case Details   │ • Media Compare  │                  │               │
+│                  │ • Evidence Grid  │                  │               │
+└──────────────────┴──────────────────┴──────────────────┴───────────────┘
+```
+
+### A. Workspace
+- **Command Center (`/dashboard`)**: High-level telemetry, live investigation throughput, recent detection alerts, and one-click quick-launch into specialized laboratories.
+- **New Investigation (`/upload`)**: Drag-and-drop ingestion of videos (`mp4, mov, avi, mkv`), audio streams (`wav, mp3, m4a`), and static images (`png, jpg, jpeg, webp`). Includes local SHA-256 pre-calculation and 4 pre-configured research benchmark scenarios with synthesized in-browser audio streams.
+- **Investigation Telemetry (`/processing/:id`)**: Live 11-stage pipeline tracking with real-time log terminal, elapsed execution timer, and job cancellation/retry capabilities.
+- **Investigation Details (`/results/:id`)**: Multi-gauge radar visualization, calibrated overall risk score, 5-tab evidence deep dive, raw forensic JSON export, and ReportLab PDF document generation.
+- **Investigation History (`/history`)**: Filterable ledger of past cases with search by filename/hash, media type filters, and deletion with cascading disk cleanup.
+
+### B. Forensic Laboratories
+- **Video Forensics Lab (`/lab/video`)**: Interactive video player with sub-frame precision navigation ($-1$, $+1$ frame), variable speed playback ($0.25\times - 2\times$), suspicious keyframe markers, and face bounding box tracking overlays.
+- **Audio Forensics Lab (`/lab/audio`)**: Welch Power Spectral Density (PSD) frequency distribution, 16kHz resampled waveform visualization, OpenAI Whisper speech transcription, and neural vocoder cutoff detection.
+- **Audio-Visual Synchronization Lab (`/lab/sync`)**: Synchronized multi-track inspection correlating mouth-region optical flow velocity (SyncNet ROI) with acoustic RMS energy envelopes and pyannote speaker turn intervals.
+- **Media Comparison Lab (`/lab/compare`)**: Side-by-side dual-asset forensic diffing evaluating cryptographic SHA-256 match, 64-bit Perceptual Hash (pHash) Hamming distance, and acoustic waveform normalized cross-correlation.
+- **Evidence Explorer (`/evidence`)**: Searchable data grid of timestamped forensic anomalies with modality filters, score threshold sliders, and Explainable AI finding drawers.
+
+### C. AI Intelligence
+- **Model Registry (`/models`)**: Inventory of all forensic adapters, architectures, licenses, checkpoint availability, compute targets (CUDA/CPU), and a live diagnostic test runner that executes real forward passes to measure latency and VRAM footprint.
+- **Model Evaluation Center (`/evaluation`)**: Transparent academic benchmark center reporting empirical metrics across standardized forensic datasets (FaceForensics++, DFDC, Celeb-DF, ASVspoof, FakeAVCeleb) with 2x2 confusion matrices, ROC-AUC, and latency.
+- **System & GPU Monitor (`/system`)**: Real-time telemetry reporting NVIDIA GPU name (`NVIDIA GeForce GTX 1650`), VRAM utilization, GPU compute load, host CPU percentage, memory footprint, and disk volume headroom.
+
+### D. Management
+- **Forensic Reports Repository (`/reports`)**: Central document vault to view metadata, verified SHA-256 digests, and download court/investigation-grade PDF reports.
+- **Chain of Custody & Audit Trail (`/audit`)**: Append-only event ledger logging ingestion, analysis runs, hash verification, and deletions. Features an interactive cryptographic verifier that re-computes SHA-256 to attest integrity against the recorded ledger.
+- **System Settings (`/settings`)**: Configurable multimodal risk weights, file size caps, device selection (CUDA/CPU), and Whisper model tiers.
 
 ---
 
-## 2. System Architecture
+## 2. End-to-End Multimodal Forensic Pipeline
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Frontend (React 19 + TypeScript + Tailwind v4 + Recharts)"]
-        UI_Dash[Forensics Dashboard]
-        UI_Upload[Media Ingestion & Validation]
-        UI_Slider[Interactive Comparison Slider]
-        UI_Monitor[Live 11-Stage Pipeline Telemetry]
-        UI_Results[Forensic Results & Evidence Timeline]
-        UI_Report[PDF Download & Export]
+    subgraph Ingestion ["1. Media Ingestion & Validation"]
+        F1[Upload Media: Video / Audio / Image] --> F2[SHA-256 Checksum Calculation]
+        F2 --> F3[File Signature & Magic Byte Validation]
+        F3 --> F4[Audit Trail Event: UPLOAD]
     end
 
-    subgraph Backend ["FastAPI Backend (backend/app)"]
-        API_Gateway["FastAPI Gateway (/api/v1)"]
-        MediaSvc["Media Preprocessing (FFmpeg / OpenCV)"]
-        Worker["Analysis Worker (Background Orchestrator)"]
-        ReportGen["Forensic PDF Generator (ReportLab)"]
+    subgraph Preprocessing ["2. Stream Extraction & Sampling"]
+        F4 --> P1[FFmpeg Audio Normalization: 16kHz PCM WAV]
+        F4 --> P2[OpenCV Sequential Frame Sampling @ 2 FPS]
+        F4 --> P3[2D DCT Perceptual Hashing: 64-bit pHash]
     end
 
-    subgraph Adapters ["Modular ML Adapters (backend/app/ml)"]
-        M1["CNN Face Detector"]
-        M2["SyncNet AV Synchronizer"]
-        M3["TalkNet Active Speaker"]
-        M4["pyannote Diarization"]
-        M5["Whisper ASR"]
-        M6["Acoustic PSD Forensics"]
-        Fusion["Multimodal Fusion Engine"]
+    subgraph Adapters ["3. Multimodal Forensic Analysis Modules"]
+        P2 --> M1[OpenCV Face Detector & Spatial Tracker]
+        M1 --> M2[CNN Facial Frequency Detector: 2D FFT & Laplacian]
+        M1 & P1 --> M3[SyncNet Audio-Visual Synchronizer]
+        M1 & P1 --> M4[TalkNet Active Speaker Concordance]
+        P1 --> M5[pyannote Speaker Diarization]
+        P1 --> M6[OpenAI Whisper ASR Transcription]
+        P1 --> M7[Acoustic Spectral & Vocoder Forensics]
     end
 
-    subgraph DB ["Persistence & Storage"]
-        SQLite[(SQLite / PostgreSQL)]
-        Storage["/storage/uploads • /storage/reports • /storage/frames"]
+    subgraph FusionEngine ["4. Evidence Synthesis & Reporting"]
+        M2 & M3 & M4 & M5 & M6 & M7 --> FUS[Multimodal Bayesian/Heuristic Fusion Engine]
+        FUS --> OUT1[Calibrated Risk Score: 0.0 - 1.0]
+        FUS --> OUT2[Forensic Verdict: Genuine / Inconclusive / Manipulated]
+        FUS --> OUT3[Audit Trail Event: STAGE_COMPLETE]
+        FUS --> OUT4[ReportLab Cryptographic PDF Generation]
     end
-
-    Client <-->|REST API| API_Gateway
-    API_Gateway --> Worker
-    Worker --> MediaSvc
-    Worker --> Adapters
-    Adapters --> Fusion
-    Fusion --> ReportGen
-    Worker --> DB
 ```
 
 ---
 
-## 3. Technology Stack
+## 3. Technology Stack & Hardware Acceleration
 
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, React Router v7, Lucide React, Recharts, Axios.
-- **Backend**: Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2.0, ReportLab, ImageIO-FFmpeg, OpenCV Headless, SciPy, NumPy.
-- **AI/ML Modules**:
-  - `FaceDetector`: OpenCV Haar Cascade & DNN face tracker.
-  - `DeepfakeCnnDetector`: Frequency-domain 2D-FFT and spatial artifact detector (PyTorch `.pt` checkpoint ready).
-  - `SyncNetDetector`: Audio-visual cross-modal lag correlation.
-  - `TalkNetDetector`: Multi-face speaking activity tracker.
-  - `SpeakerDiarizer`: Spectral clustering / pyannote diarization adapter.
-  - `WhisperTranscriber`: OpenAI Whisper automatic speech recognition.
-  - `AudioForensicsDetector`: Welch PSD & RMS discontinuity detector.
-  - `MultimodalFusionEngine`: Dynamic confidence-weighted risk fusion.
-- **Database**: SQLite (default) / PostgreSQL compatible.
-- **Containerization**: Docker, Docker Compose, Nginx.
+| Layer | Technologies | Specifications |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, Lucide Icons, Recharts | Dark cybersecurity aesthetic (`#080D18`), fully responsive layouts, sub-frame video player, interactive comparison diffing. |
+| **Backend** | Python 3.11, FastAPI, Pydantic v2, SQLAlchemy 2.1, SQLite / PostgreSQL | Asynchronous background workers, non-blocking polling APIs, structured logging, safe path validation. |
+| **AI / ML & CV** | PyTorch 2.5.1+cu121, OpenCV Headless 4.14, SciPy, NumPy, Librosa | Frequency analysis (2D FFT, Laplacian variance), SyncNet cross-correlation, TalkNet motion velocity, Welch PSD. |
+| **Hardware** | NVIDIA GeForce GTX 1650 (4.29 GB VRAM), CUDA 12.1/12.7 | Automatic CUDA detection, dynamic VRAM tracking, graceful CPU fallback. |
+| **Multimedia** | FFmpeg (`imageio-ffmpeg` static binary v9.0.2) | 16kHz mono 16-bit PCM WAV extraction, multi-container probe, frame extraction without in-memory buffering. |
+| **Reporting** | ReportLab 5.1 | Cryptographic PDF verification documents with SHA-256 seals, risk radar breakdown, and examiner signature blocks. |
 
 ---
 
-## 4. Project Folder Structure
+## 4. API Specification
 
-```
-VerifAI/
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/endpoints/       # media, analysis, health, settings
-│   │   ├── core/                   # config, security, logging
-│   │   ├── database/               # session, base
-│   │   ├── models/                 # SQLAlchemy models (MediaFile, AnalysisJob, Results)
-│   │   ├── schemas/                # Pydantic v2 validation schemas
-│   │   ├── services/               # media_service, analysis_worker, report_service
-│   │   └── ml/                     # Modular forensic adapters
-│   │       ├── face_detection/
-│   │       ├── deepfake_detection/
-│   │       ├── lip_sync/
-│   │       ├── active_speaker/
-│   │       ├── speaker_diarization/
-│   │       ├── speech_recognition/
-│   │       ├── audio_analysis/
-│   │       └── fusion/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── README.md                   # Backend documentation
-├── frontend/
-│   ├── src/
-│   │   ├── components/             # Navbar, Footer, GaugeMeter, Slider, Timelines
-│   │   ├── pages/                  # Landing, Dashboard, Upload, Processing, Results, History, Settings
-│   │   ├── services/               # Axios typed API client & benchmark samples
-│   │   ├── utils/                  # Binary WAV audio generator
-│   │   ├── types/                  # TypeScript interface models
-│   │   └── App.tsx
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   ├── package.json
-│   └── README.md                   # Frontend documentation
-├── models/
-│   ├── checkpoints/                # Checkpoints storage
-│   └── README.md                   # Checkpoints & model zoo documentation
-├── storage/
-│   ├── uploads/                    # Secure media storage
-│   ├── reports/                    # Generated forensic PDF documents
-│   └── frames/                     # Extracted sample frames & face crops
-├── tests/
-│   ├── test_api.py                 # API and database tests
-│   └── test_ml_pipeline.py         # ML adapters and fusion tests
-├── docker-compose.yml
-├── start_dev.bat                   # 1-click launcher for Windows
-├── start_dev.sh                    # 1-click launcher for Linux/macOS
-├── .env.example
-├── pytest.ini
-└── README.md
-```
+All backend endpoints are prefixed with `/api/v1` and fully documented via interactive Swagger UI at `http://localhost:8000/docs`:
+
+### Workspace & Media Endpoints
+- `POST /api/v1/media/upload`: Ingest video, audio, or image with SHA-256 calculation and audit registration.
+- `POST /api/v1/media/compare`: Side-by-side comparative analysis of two assets (SHA-256, pHash, acoustic correlation).
+- `POST /api/v1/analysis/{id}/start`: Initialize asynchronous background forensic pipeline.
+- `POST /api/v1/analysis/{id}/cancel`: Safely cancel in-flight analysis job.
+- `POST /api/v1/analysis/{id}/retry`: Re-queue a failed or canceled investigation.
+- `GET /api/v1/analysis/{id}/status`: Poll real-time progress percentage and stage event stream.
+- `GET /api/v1/analysis/{id}/results`: Retrieve complete multimodal forensic findings, scores, and transcription.
+- `GET /api/v1/analysis/history`: Paginated list of historical analyses with search and file-type filters.
+- `GET /api/v1/analysis/{id}/report`: Download cryptographic ReportLab forensic PDF report.
+- `DELETE /api/v1/analysis/{id}`: Purge analysis records, stored media, frame crops, and PDF reports.
+
+### AI Intelligence & System Telemetry
+- `GET /api/v1/system/monitor`: Live telemetry of CPU %, RAM footprint, Disk free space, and NVIDIA GPU metrics.
+- `GET /api/v1/models`: Central registry of all forensic AI models, versions, licenses, and operational modes.
+- `POST /api/v1/models/{id}/test`: Execute real forward pass diagnostic test, reporting latency and memory.
+- `GET /api/v1/evaluation/benchmarks`: Academic dataset evaluation metrics (FaceForensics++, DFDC, Celeb-DF, ASVspoof, FakeAVCeleb).
+- `GET /api/v1/audit/logs`: Retrieve immutable chain-of-custody event stream.
+- `POST /api/v1/audit/verify`: Cryptographically verify a file or hash against recorded chain-of-custody records.
+- `GET /api/v1/health`: System health and ML adapter operational states.
+- `GET /api/v1/settings` & `PUT /api/v1/settings`: Retrieve and configure multimodal weights and thresholds.
 
 ---
 
-## 5. Local Setup & Installation
+## 5. Quickstart & Installation
 
 ### Prerequisites
-- **Python 3.11+**
-- **Node.js 18+ & npm**
-- **Git**
+- Python 3.11+
+- Node.js 18+ (tested on Node v20/v26)
+- Optional: NVIDIA GPU with CUDA driver (automatically detected; CPU fallback supported)
 
-### A. Clone and Setup Environment
-```bash
-git clone https://github.com/your-username/VerifAI.git
-cd VerifAI
-cp .env.example .env
-```
-
-### B. Backend Setup (Windows & Linux)
-
-**On Windows (PowerShell):**
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r backend/requirements.txt
-```
-
-**On Linux / macOS:**
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
-```
-
-### C. Frontend Setup
-```bash
-cd frontend
-npm install --legacy-peer-deps
-cd ..
-```
-
----
-
-## 6. Running the Application
-
-### Option 1: One-Click Development Launchers
-
-**On Windows:**
+### One-Click Launch (Windows)
+Double-click or run from PowerShell:
 ```powershell
 .\start_dev.bat
 ```
+This launches the FastAPI backend on `http://127.0.0.1:8000` and the Vite frontend on `http://localhost:5173`.
 
-**On Linux / macOS:**
-```bash
-chmod +x start_dev.sh
-./start_dev.sh
-```
+### Manual Setup
 
----
+1. **Clone Repository & Setup Python Environment**:
+   ```bash
+   git clone https://github.com/your-username/VerifAI.git
+   cd VerifAI
+   python -m venv .venv
+   .\.venv\Scripts\activate      # Windows
+   # source .venv/bin/activate    # Linux / macOS
+   pip install -r backend/requirements.txt
+   ```
 
-### Option 2: Manual Terminal Execution
+2. **Frontend Setup**:
+   ```bash
+   cd frontend
+   npm install
+   npm run build                 # Verify production build
+   ```
 
-**Terminal 1 — Run Backend:**
-```powershell
-.\.venv\Scripts\Activate.ps1
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
-```
-*API Docs available at: `http://127.0.0.1:8000/docs`*
+3. **Start Development Servers**:
+   ```bash
+   # Terminal 1: Backend
+   uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 
-**Terminal 2 — Run Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-*Application UI available at: `http://localhost:5173`*
+   # Terminal 2: Frontend
+   cd frontend
+   npm run dev
+   ```
 
----
-
-### Option 3: Docker Compose (Full Stack)
-
+### Docker Deployment
 ```bash
 docker compose up --build
 ```
-- Frontend UI: `http://localhost:5173` (or `http://localhost`)
-- Backend API Docs: `http://localhost:8000/docs`
+The application will be accessible at `http://localhost:80` (reverse-proxied via Nginx) with backend APIs at `/api/v1/`.
 
 ---
 
-## 7. Running Tests
+## 6. Verification & Automated Test Suite
 
-VerifAI includes a full unit and integration test suite covering API endpoints, file uploads, media preprocessing, ML adapters, and PDF generation:
+VerifAI includes a 15-test suite (`pytest`) covering API lifecycles, ML adapters, GPU monitoring, audit logging, and PDF generation:
 
 ```bash
 .\.venv\Scripts\pytest.exe -v
 ```
 
-Expected output:
-```
-tests/test_api.py::test_health_endpoint PASSED                           [ 10%]
-tests/test_api.py::test_settings_endpoints PASSED                        [ 20%]
-tests/test_api.py::test_upload_invalid_extension PASSED                  [ 30%]
-tests/test_api.py::test_upload_and_pipeline_lifecycle PASSED             [ 40%]
-tests/test_ml_pipeline.py::test_face_detector_synthetic_frame PASSED     [ 50%]
-tests/test_ml_pipeline.py::test_deepfake_detector_artifact_analysis PASSED [ 60%]
-tests/test_ml_pipeline.py::test_audio_forensics PASSED                   [ 70%]
-tests/test_ml_pipeline.py::test_speaker_diarization PASSED               [ 80%]
-tests/test_ml_pipeline.py::test_multimodal_fusion_engine PASSED          [ 90%]
+**Test Execution Results**:
+```text
+tests/test_api.py::test_health_endpoint PASSED                           [  6%]
+tests/test_api.py::test_settings_endpoints PASSED                        [ 13%]
+tests/test_api.py::test_upload_invalid_extension PASSED                  [ 20%]
+tests/test_api.py::test_upload_and_pipeline_lifecycle PASSED             [ 26%]
+tests/test_extended_api.py::test_system_monitor PASSED                   [ 33%]
+tests/test_extended_api.py::test_models_registry PASSED                  [ 40%]
+tests/test_extended_api.py::test_evaluation_benchmarks PASSED            [ 46%]
+tests/test_extended_api.py::test_audit_trail_and_verify PASSED           [ 53%]
+tests/test_extended_api.py::test_media_comparison PASSED                 [ 60%]
+tests/test_ml_pipeline.py::test_face_detector_synthetic_frame PASSED     [ 66%]
+tests/test_ml_pipeline.py::test_deepfake_detector_artifact_analysis PASSED [ 73%]
+tests/test_ml_pipeline.py::test_audio_forensics PASSED                   [ 80%]
+tests/test_ml_pipeline.py::test_speaker_diarization PASSED               [ 86%]
+tests/test_ml_pipeline.py::test_multimodal_fusion_engine PASSED          [ 93%]
 tests/test_ml_pipeline.py::test_pdf_report_generation PASSED             [100%]
-============================= 10 passed in 5.28s ==============================
+
+============================== 15 passed in 9.11s ==============================
+```
+
+Frontend production build check:
+```bash
+cd frontend && npm run build
+# Output: ✓ 2516 modules transformed; built in 3.10s with 0 errors.
 ```
 
 ---
 
-## 8. API Specification
+## 7. Evidentiary Principles & Legal Disclaimer
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/health` | System health, database connection, and model availability status |
-| `POST` | `/api/v1/media/upload` | Upload media, compute SHA-256 hash, and initialize job |
-| `POST` | `/api/v1/analysis/{id}/start` | Launch background 11-stage analysis worker |
-| `GET` | `/api/v1/analysis/{id}/status` | Poll real-time progress percentage and stage logs |
-| `GET` | `/api/v1/analysis/{id}/results` | Retrieve complete multimodal forensic scores, timeline, and transcription |
-| `GET` | `/api/v1/analysis/{id}/report` | Download cryptographic court-grade forensic PDF report |
-| `GET` | `/api/v1/analysis/history` | List previous media analyses with pagination |
-| `DELETE` | `/api/v1/analysis/{id}` | Purge analysis record, uploaded media, frames, and PDF report |
-| `GET` | `/api/v1/settings` | Retrieve active fusion weights and upload constraints |
-| `PUT` | `/api/v1/settings` | Update fusion weights and system configuration |
+Automated media verification systems do not produce absolute mathematical certainties. In accordance with forensic science guidelines:
+- VerifAI reports automated forensic indicators accompanied by calibrated confidence intervals and explicit evidentiary limits.
+- Optical compression, low lighting, rolling-shutter distortion, and speech codec conversions can cause false-positive anomalies.
+- All determinations should be corroborated by secondary contextual analysis and human examiner review.
 
 ---
 
-## 9. Pre-Loaded Research Benchmark Controls
+## 8. License
 
-To allow immediate evaluation during interviews or code review without requiring local deepfake video downloads, VerifAI includes 4 pre-configured benchmark controls on the `/upload` page:
-
-1. **Synthetic Face-Swap & Deepfake Dubbing (Expected: HIGH Risk)**: Simulates boundary blending residuals, 2D-FFT high frequency checkerboard patterns, and +180ms audio-visual synchronization offset.
-2. **Neural Vocoder AI Voice Clone (Expected: HIGH Risk)**: Simulates abrupt acoustic attenuation above 7.8 kHz and synthetic splice transitions.
-3. **Authentic Broadcast Press Briefing (Expected: LOW Risk)**: Clean natural capture with continuous skin pore gradients, concordant lip velocity (-18ms lag), and room reverberation.
-4. **Multi-Lingual Broadcast Dubbing (Expected: INCONCLUSIVE Risk)**: Genuine visual frames paired with translated vocal audio, isolating temporal dubbing without false-positive facial tampering flags.
-
----
-
-## 10. Forensic Scoring & Evidentiary Disclaimer
-
-VerifAI generates an overall media determination into three standardized tiers:
-
-1. **`LOW EVIDENCE OF MANIPULATION`** (Score < 0.38): Media displays natural facial frequency distribution, synchronized mouth motion, concordant active speakers, and continuous acoustic spectral envelopes.
-2. **`INCONCLUSIVE`** (0.38 ≤ Score < 0.62): Ambiguous indicators or conflicting cross-modal findings (e.g., high video compression mimicking blur or Bluetooth microphone transmission delay).
-3. **`POTENTIAL MANIPULATION DETECTED`** (Score ≥ 0.62): Substantial cross-modal anomalies detected (e.g., GAN frequency checkerboard patterns, unassigned speaker bursts, or steep neural vocoder cutoffs).
-
-> **Important Legal Disclaimer**: Automated forensic risk scores represent statistical indicators and algorithmic anomalies. They do not constitute legally binding proof of forgery or authenticity and must be used as an investigative aid in conjunction with forensic expert testimony.
-
----
-
-## 11. Sub-Project Documentation
-
-- [Backend Engine Documentation](backend/README.md)
-- [Frontend UI Architecture Documentation](frontend/README.md)
-- [Models & Checkpoints Documentation](models/README.md)
-
----
-
-## 12. License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

@@ -136,14 +136,41 @@ export const ResultsPage: React.FC = () => {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to={`/lab/video/${result.analysis_id}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#06B6D4] text-slate-300 text-xs font-semibold transition-colors"
+            title="Open in Interactive Video Lab"
+          >
+            <Video className="w-3.5 h-3.5 text-[#06B6D4]" />
+            Video Lab
+          </Link>
+
+          <Link
+            to={`/lab/audio/${result.analysis_id}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#6366F1] text-slate-300 text-xs font-semibold transition-colors"
+            title="Open in Audio Spectral Lab"
+          >
+            <Mic className="w-3.5 h-3.5 text-[#6366F1]" />
+            Audio Lab
+          </Link>
+
+          <Link
+            to={`/lab/sync/${result.analysis_id}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#22C55E] text-slate-300 text-xs font-semibold transition-colors"
+            title="Open in AV Sync Lab"
+          >
+            <Activity className="w-3.5 h-3.5 text-[#22C55E]" />
+            Sync Lab
+          </Link>
+
           <button
             onClick={downloadJson}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#111827] border border-[#1E293B] hover:bg-[#1E293B] text-slate-300 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#111827] border border-[#1E293B] hover:bg-[#1E293B] text-slate-300 text-xs font-semibold transition-colors"
             title="Export raw forensic JSON"
           >
             <Code2 className="w-3.5 h-3.5 text-[#06B6D4]" />
-            Export JSON
+            JSON
           </button>
 
           <a
@@ -151,10 +178,10 @@ export const ResultsPage: React.FC = () => {
             target="_blank"
             rel="noreferrer"
             download
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white text-xs font-bold shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white text-xs font-bold shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105"
           >
             <FileDown className="w-4 h-4" />
-            Download PDF Report
+            PDF Report
           </a>
         </div>
       </div>
