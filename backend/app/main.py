@@ -31,9 +31,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for previewing face crops and frames
+# Mount static files for streaming uploaded media, face crops, and extracted frames
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(settings.FRAME_DIR, exist_ok=True)
+app.mount("/storage/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 app.mount("/storage/frames", StaticFiles(directory=settings.FRAME_DIR), name="frames")
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)

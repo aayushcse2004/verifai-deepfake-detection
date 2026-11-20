@@ -7,6 +7,52 @@ from backend.app.ml.adapter_base import BaseForensicAdapter
 from backend.app.core.logging import logger
 from backend.app.core.config import settings
 
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+
+
+if TORCH_AVAILABLE:
+    class SyncNetMini(nn.Module):
+        """SyncNet two-stream audio-visual cross-modal embedding encoder."""
+        def __init__(self, embedding_dim: int = 128):
+            super(SyncNetMini, self).__init__()
+            self.visual_net = nn.Sequential(
+                nn.Conv2d(5, 32, kernel_size=3, padding=1),
+                nn.BatchNorm2d(32),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2, 2),
+                nn.Conv2d(32, 64, kernel_size=3, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
+                nn.AdaptiveAvgPool2d((4, 4)),
+                nn.Flatten(),
+                nn.Linear(64 * 4 * 4, embedding_dim)
+            )
+
+            self.audio_net = nn.Sequential(
+                nn.Conv2d(1, 32, kernel_size=3, padding=1),
+                nn.BatchNorm2d(32),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2, 2),
+                nn.Conv2d(32, 64, kernel_size=3, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
+                nn.AdaptiveAvgPool2d((4, 4)),
+                nn.Flatten(),
+                nn.Linear(64 * 4 * 4, embedding_dim)
+            )
+
+        def forward(self, visual_x: torch.Tensor, audio_x: torch.Tensor):
+            v_emb = self.visual_net(visual_x)
+            a_emb = self.audio_net(audio_x)
+            v_norm = nn.functional.normalize(v_emb, p=2, dim=1)
+            a_norm = nn.functional.normalize(a_emb, p=2, dim=1)
+            return (v_norm * a_norm).sum(dim=1)
+
 
 class SyncNetDetector(BaseForensicAdapter):
     """
@@ -20,14 +66,27 @@ class SyncNetDetector(BaseForensicAdapter):
         super().__init__(name="SyncNet Audio-Visual Synchronizer", version="1.4.0")
         self.checkpoint_path = checkpoint_path or os.path.join(settings.MODEL_CHECKPOINTS_DIR, "syncnet_v2.model")
         self.model = None
+        self.device = None
         self._load_checkpoint()
 
     def _load_checkpoint(self):
+        if not TORCH_AVAILABLE:
+            self.model = None
+            return
+
         if os.path.exists(self.checkpoint_path):
             try:
-                import torch
-                self.model = torch.load(self.checkpoint_path, map_location=settings.DEVICE)
-                logger.info(f"Loaded SyncNet model weights from {self.checkpoint_path}")
+                device_str = "cuda" if (torch.cuda.is_available() and settings.ENABLE_GPU) else "cpu"
+                self.device = torch.device(device_str)
+
+                net = SyncNetMini()
+                checkpoint_data = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
+                if isinstance(checkpoint_data, dict):
+                    net.load_state_dict(checkpoint_data)
+                net.to(self.device)
+                net.eval()
+                self.model = net
+                logger.info(f"Loaded SyncNet model weights onto {self.device} from {self.checkpoint_path}")
             except Exception as e:
                 logger.warning(f"SyncNet model load error ({e}); using cross-modal correlation baseline.")
                 self.model = None
@@ -57,7 +116,6 @@ class SyncNetDetector(BaseForensicAdapter):
                 continue
 
             h, w = crop.shape[:2]
-            # Lower 35% of face crop is the mouth ROI
             mouth_roi = crop[int(h * 0.65):, int(w * 0.2):int(w * 0.8)]
             if mouth_roi.size == 0:
                 continue
@@ -168,8 +226,6 @@ class SyncNetDetector(BaseForensicAdapter):
         offset_ms = round(best_lag_steps * dt * 1000.0, 1)
 
         # 4. Forensic risk scoring
-        # Normal speech usually exhibits positive correlation (> 0.25) and offset between -100ms and +100ms.
-        # Desynchronized / manipulated lips exhibit low correlation or large offset.
         evidence = []
         risk_score = 0.20 # baseline genuine expectation
 

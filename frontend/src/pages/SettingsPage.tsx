@@ -3,23 +3,22 @@ import {
   Settings,
   Sliders,
   HardDrive,
-  Cpu,
-  CheckCircle2,
   Save,
-  RefreshCw,
-  AlertCircle,
-  Database,
-  Lock,
 } from 'lucide-react';
 import { getSettings, updateSettings } from '../services/api';
 import { SystemSettings } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/Card';
+import { Badge } from '../components/common/Badge';
+import { Button } from '../components/common/Button';
+import { useToast } from '../components/common/ToastContext';
 
 export const SettingsPage: React.FC = () => {
+  const { addToast } = useToast();
   const [settings, setSettingsState] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Form states
   const [maxSize, setMaxSize] = useState<number>(250);
@@ -40,7 +39,11 @@ export const SettingsPage: React.FC = () => {
       })
       .catch((err) => {
         console.error('Settings fetch error:', err);
-        setError('Failed to load system settings.');
+        addToast({
+          type: 'error',
+          title: 'Failed to Load Settings',
+          message: 'Could not retrieve platform configuration from backend.',
+        });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -48,8 +51,6 @@ export const SettingsPage: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setMessage(null);
-    setError(null);
 
     try {
       const updated = await updateSettings({
@@ -60,10 +61,18 @@ export const SettingsPage: React.FC = () => {
         weight_audio: wAudio,
       });
       setSettingsState(updated);
-      setMessage('System configuration and fusion weights updated successfully.');
+      addToast({
+        type: 'success',
+        title: 'Settings Saved Successfully',
+        message: 'System configuration and fusion weights updated.',
+      });
     } catch (err: any) {
       console.error('Update error:', err);
-      setError(err?.response?.data?.detail || 'Failed to update settings.');
+      addToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: err?.response?.data?.detail || 'Failed to update settings.',
+      });
     } finally {
       setSaving(false);
     }
@@ -72,56 +81,39 @@ export const SettingsPage: React.FC = () => {
   const weightsSum = (wFacial + wLipSync + wActiveSpeaker + wAudio).toFixed(2);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2.5">
-          <Settings className="w-7 h-7 text-[#06B6D4]" />
-          Platform & Model Settings
-        </h1>
-        <p className="text-sm text-[#94A3B8]">
-          Configure media upload thresholds, multimodal fusion weights, and hardware parameters
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: 'Management' },
+          { label: 'Settings' },
+        ]}
+      />
 
-      {message && (
-        <div className="p-4 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 flex items-center gap-3 text-sm text-[#22C55E]">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{message}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-center gap-3 text-sm text-[#EF4444]">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+      <PageHeader
+        title="Platform & Model Settings"
+        subtitle="Configure media upload thresholds, multimodal fusion weights, and hardware parameters"
+        icon={<Settings className="w-5 h-5" />}
+      />
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Multimodal Fusion Weights */}
-        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 shadow-xl space-y-5">
-          <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+        <Card className="border-[#1E293B] bg-[#0E1424]">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#1E293B]">
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
                 <Sliders className="w-5 h-5 text-[#6366F1]" />
                 Multimodal Fusion Weights
-              </h3>
-              <p className="text-xs text-[#94A3B8]">
+              </CardTitle>
+              <CardDescription>
                 Relative weighting allocated across forensic modalities (Total sum: {weightsSum})
-              </p>
+              </CardDescription>
             </div>
-            <span
-              className={`font-mono text-xs font-bold px-2.5 py-1 rounded ${
-                weightsSum === '1.00'
-                  ? 'bg-[#22C55E]/10 text-[#22C55E]'
-                  : 'bg-[#F59E0B]/10 text-[#F59E0B]'
-              }`}
-            >
+            <Badge variant={weightsSum === '1.00' ? 'success' : 'warning'}>
               Sum: {weightsSum}
-            </span>
-          </div>
+            </Badge>
+          </CardHeader>
 
-          <div className="space-y-4">
+          <CardContent className="space-y-4 pt-5">
             <div>
               <div className="flex justify-between text-xs font-mono text-slate-300 mb-1">
                 <span>Facial Manipulation Weight (CNN)</span>
@@ -185,20 +177,20 @@ export const SettingsPage: React.FC = () => {
                 className="w-full accent-[#F59E0B] cursor-pointer"
               />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Ingestion & Hardware Settings */}
-        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 shadow-xl space-y-5">
-          <div className="border-b border-[#1E293B] pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+        <Card className="border-[#1E293B] bg-[#0E1424]">
+          <CardHeader className="pb-3 border-b border-[#1E293B]">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
               <HardDrive className="w-5 h-5 text-[#06B6D4]" />
               Storage & Hardware Configuration
-            </h3>
-            <p className="text-xs text-[#94A3B8]">Limits and runtime environment execution flags</p>
-          </div>
+            </CardTitle>
+            <CardDescription>Limits and runtime environment execution flags</CardDescription>
+          </CardHeader>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5">
             <div>
               <label className="text-xs font-medium text-slate-300 block mb-1">
                 Maximum Upload Size (MB)
@@ -232,7 +224,7 @@ export const SettingsPage: React.FC = () => {
               <input
                 type="text"
                 disabled
-                value={settings?.device || 'cpu'}
+                value={settings?.device || 'cuda'}
                 className="w-full bg-[#080D18]/50 border border-[#1E293B] rounded-xl px-3.5 py-2 text-xs text-slate-500 font-mono uppercase"
               />
             </div>
@@ -248,22 +240,23 @@ export const SettingsPage: React.FC = () => {
                 className="w-full bg-[#080D18]/50 border border-[#1E293B] rounded-xl px-3.5 py-2 text-xs text-slate-500 font-mono"
               />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Submit Button */}
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white text-xs font-bold shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105"
+            loading={saving}
+            variant="primary"
+            size="lg"
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving Changes...' : 'Save Settings'}
-          </button>
+            <Save className="w-4 h-4 mr-1.5" />
+            Save Settings
+          </Button>
         </div>
       </form>
     </div>
   );
 };
-

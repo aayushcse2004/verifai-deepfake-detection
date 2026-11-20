@@ -16,4 +16,6 @@ class AuditLog(Base):
     action = Column(String(255), nullable=False)
     status = Column(String(50), default="SUCCESS") # SUCCESS, WARNING, FAILURE
     details = Column(JSON, default=dict)
+    previous_hash = Column(String(64), nullable=True, index=True)
+    entry_hash = Column(String(64), nullable=True, index=True)
 

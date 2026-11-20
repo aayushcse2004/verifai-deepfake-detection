@@ -171,6 +171,18 @@ export const verifyCustodyHash = async (
   return response.data;
 };
 
+export const verifyAuditHashChain = async (): Promise<{
+  valid: boolean;
+  total_records: number;
+  chain_head?: string;
+  message?: string;
+  error?: string;
+  broken_at_id?: string;
+}> => {
+  const response = await api.get('/audit/verify-chain');
+  return response.data;
+};
+
 export const compareMediaAssets = async (fileA: File, fileB: File): Promise<ComparisonResult> => {
   const formData = new FormData();
   formData.append('file_a', fileA);
@@ -189,6 +201,28 @@ export const getSettings = async (): Promise<SystemSettings> => {
 
 export const updateSettings = async (data: Partial<SystemSettings>): Promise<SystemSettings> => {
   const response = await api.put('/settings', data);
+  return response.data;
+};
+
+export const triggerStorageCleanup = async (
+  maxAgeDays: number = 14,
+  dryRun: boolean = true,
+  purgeOrphanedFrames: boolean = true
+): Promise<{
+  dry_run: boolean;
+  max_age_days: number;
+  files_deleted: number;
+  bytes_freed: number;
+  records_updated: number;
+  details: string[];
+}> => {
+  const response = await api.post('/system/cleanup', null, {
+    params: {
+      max_age_days: maxAgeDays,
+      dry_run: dryRun,
+      purge_orphaned_frames: purgeOrphanedFrames,
+    },
+  });
   return response.data;
 };
 

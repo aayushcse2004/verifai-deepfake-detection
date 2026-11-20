@@ -43,11 +43,23 @@ def get_audit_trail(
                 "actor": log.actor,
                 "action": log.action,
                 "status": log.status,
-                "details": log.details
+                "details": log.details,
+                "previous_hash": log.previous_hash,
+                "entry_hash": log.entry_hash
             }
             for log in logs
         ]
     }
+
+
+@router.get("/verify-chain")
+def verify_audit_hash_chain(db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Cryptographically verify the entire chain of custody audit trail.
+    Ensures sequential integrity using SHA-256 hash chaining across all recorded forensic operations.
+    """
+    result = audit_service.verify_chain(db)
+    return result
 
 
 @router.post("/verify")

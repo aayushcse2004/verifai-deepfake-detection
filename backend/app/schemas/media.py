@@ -6,6 +6,7 @@ from typing import Optional
 class MediaFileResponse(BaseModel):
     id: str
     original_filename: str
+    stored_filename: Optional[str] = None
     file_type: str
     file_size: int
     duration: Optional[float] = 0.0

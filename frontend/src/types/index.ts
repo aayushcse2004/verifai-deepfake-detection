@@ -1,6 +1,7 @@
 export interface MediaFile {
   id: string;
   original_filename: string;
+  stored_filename?: string;
   file_type: 'video' | 'audio' | 'image';
   file_size: number;
   duration?: number;

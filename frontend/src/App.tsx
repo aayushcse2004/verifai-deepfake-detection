@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
+import { AppLayout } from './layouts/AppLayout';
+import { Skeleton } from './components/common/Skeleton';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -22,12 +22,18 @@ import { AudioForensicsPage } from './pages/AudioForensicsPage';
 import { SyncLabPage } from './pages/SyncLabPage';
 import { EvidenceExplorerPage } from './pages/EvidenceExplorerPage';
 
+const PageLoader = () => (
+  <div className="py-24 text-center space-y-4">
+    <div className="w-10 h-10 border-4 border-[#06B6D4] border-t-transparent rounded-full animate-spin mx-auto" />
+    <p className="text-xs font-mono text-[#94A3B8]">Loading forensic module...</p>
+  </div>
+);
+
 export function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col bg-[#080D18] text-[#F8FAFC]">
-        <Navbar />
-        <main className="flex-1">
+      <AppLayout>
+        <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Workspace */}
             <Route path="/" element={<LandingPage />} />
@@ -56,15 +62,15 @@ export function App() {
 
             {/* Management */}
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/reports/:analysisId" element={<ReportsPage />} />
             <Route path="/audit" element={<AuditTrailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </main>
-        <Footer />
-      </div>
+        </Suspense>
+      </AppLayout>
     </Router>
   );
 }

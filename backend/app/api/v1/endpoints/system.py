@@ -143,3 +143,23 @@ def get_system_monitor(db: Session = Depends(get_db)):
         }
     }
 
+
+@router.post("/cleanup")
+def trigger_storage_cleanup(
+    max_age_days: int = 14,
+    dry_run: bool = True,
+    purge_orphaned_frames: bool = True,
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Enforce data retention lifecycle by pruning expired artifacts and orphaned frame caches.
+    Supports dry-run preview and live execution with chain-of-custody logging.
+    """
+    from backend.app.services.cleanup_service import cleanup_service
+    return cleanup_service.inspect_and_cleanup(
+        db=db,
+        max_age_days=max_age_days,
+        dry_run=dry_run,
+        purge_orphaned_frames=purge_orphaned_frames
+    )
+

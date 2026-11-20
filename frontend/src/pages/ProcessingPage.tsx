@@ -5,21 +5,23 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileText,
   Terminal,
   ShieldCheck,
-  ChevronRight,
   ArrowRight,
   Copy,
   Check,
   Radio,
-  Eye,
   Scan,
   XCircle,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 import { getAnalysisStatus, cancelAnalysis, retryAnalysis } from '../services/api';
 import { StageLog } from '../types';
+import { PageHeader } from '../components/common/PageHeader';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/Card';
+import { Badge } from '../components/common/Badge';
+import { Button } from '../components/common/Button';
 
 export const ProcessingPage: React.FC = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
@@ -107,130 +109,127 @@ export const ProcessingPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#1E293B] pb-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111827] border border-[#1E293B] text-xs font-mono text-[#06B6D4] mb-2">
-            <Radio className="w-3.5 h-3.5 text-[#06B6D4] animate-pulse" />
-            <span>Analysis ID: {analysisId}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Forensic Pipeline Execution Telemetry
-          </h1>
-          <p className="text-sm text-[#94A3B8]">
-            Asynchronous multi-adapter inference across computer vision, speech acoustics, and temporal synchronization
-          </p>
-        </div>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <Breadcrumbs
+        items={[
+          { label: 'Workspace' },
+          { label: 'Active Investigation', href: '/history' },
+          { label: 'Processing Telemetry' },
+        ]}
+      />
 
-        {status === 'COMPLETED' ? (
-          <Link
-            to={`/results/${analysisId}`}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-white text-sm font-bold shadow-lg shadow-[#22C55E]/20 transition-all hover:scale-105"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Open Forensic Results
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        ) : status === 'FAILED' || status === 'CANCELLED' ? (
-          <div className="flex items-center gap-2">
-            <button
+      <PageHeader
+        title="Forensic Pipeline Execution Telemetry"
+        subtitle="Asynchronous multi-adapter inference across computer vision, speech acoustics, and temporal synchronization"
+        icon={<Activity className="w-5 h-5" />}
+        actions={
+          status === 'COMPLETED' ? (
+            <Link to={`/results/${analysisId}`}>
+              <Button variant="primary">
+                <ShieldCheck className="w-4 h-4 mr-1.5" />
+                Open Forensic Results
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          ) : status === 'FAILED' || status === 'CANCELLED' ? (
+            <Button
+              variant="primary"
               onClick={async () => {
                 if (analysisId) {
                   await retryAnalysis(analysisId);
                   setStatus('PROCESSING');
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-bold transition-all shadow-md shadow-[#6366F1]/20"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4 mr-1.5" />
               Retry Analysis
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 font-mono text-xs text-slate-400 bg-[#111827] px-4 py-2 rounded-xl border border-[#1E293B]">
-            <Clock className="w-4 h-4 text-[#06B6D4]" />
-            <span>Elapsed: <strong className="text-white">{formatTime(elapsedSeconds)}</strong></span>
-            <span>•</span>
-            <span className="text-[#22C55E] animate-pulse">Running</span>
-            <span>•</span>
-            <button
-              onClick={async () => {
-                if (analysisId) {
-                  await cancelAnalysis(analysisId);
-                  setStatus('CANCELLED');
-                }
-              }}
-              className="text-[#EF4444] hover:underline flex items-center gap-1 font-sans"
-            >
-              <XCircle className="w-3.5 h-3.5" />
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
+            </Button>
+          ) : (
+            <div className="flex items-center gap-3 font-mono text-xs text-slate-400 bg-[#0E1424] px-4 py-2 rounded-xl border border-[#1E293B]">
+              <Clock className="w-4 h-4 text-[#06B6D4]" />
+              <span>Elapsed: <strong className="text-white">{formatTime(elapsedSeconds)}</strong></span>
+              <span>•</span>
+              <span className="text-[#22C55E] animate-pulse">Running</span>
+              <span>•</span>
+              <button
+                onClick={async () => {
+                  if (analysisId) {
+                    await cancelAnalysis(analysisId);
+                    setStatus('CANCELLED');
+                  }
+                }}
+                className="text-[#EF4444] hover:underline flex items-center gap-1 font-sans"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                Cancel
+              </button>
+            </div>
+          )
+        }
+      />
 
       {/* Cyber Scanning HUD Card */}
-      <div className="relative bg-[#111827] border border-[#1E293B] rounded-2xl p-6 sm:p-8 shadow-2xl overflow-hidden space-y-6">
+      <Card className="relative border-[#1E293B] bg-[#0E1424] overflow-hidden">
         {/* Animated Scanning Laser Line */}
         {status === 'PROCESSING' && (
           <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#06B6D4] to-transparent shadow-[0_0_15px_#06B6D4] animate-laser pointer-events-none z-10" />
         )}
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-              Active Forensic Stage
-            </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2.5 mt-0.5">
-              <Scan className="w-6 h-6 text-[#06B6D4] animate-spin" />
-              {currentStage}
-            </h3>
-          </div>
-
-          <div className="text-right">
-            <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-[#6366F1] to-[#06B6D4]">
-              {progress}%
-            </span>
-          </div>
-        </div>
-
-        {/* Global Pipeline Progress Bar */}
-        <div className="w-full bg-[#080D18] rounded-full h-4 border border-[#1E293B] overflow-hidden p-0.5">
-          <div
-            className={`h-3 rounded-full transition-all duration-700 ${
-              status === 'FAILED'
-                ? 'bg-[#EF4444]'
-                : status === 'COMPLETED'
-                ? 'bg-[#22C55E]'
-                : 'bg-gradient-to-r from-[#6366F1] via-[#06B6D4] to-[#22C55E]'
-            }`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Error notification if failed */}
-        {status === 'FAILED' && (
-          <div className="p-4 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-start gap-3 text-sm text-[#EF4444]">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+        <CardContent className="p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span className="font-bold block">Pipeline Execution Failed</span>
-              <p className="text-xs mt-1 text-slate-300">{errorMessage}</p>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                Active Forensic Stage
+              </span>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2.5 mt-0.5">
+                <Scan className="w-6 h-6 text-[#06B6D4] animate-spin" />
+                {currentStage}
+              </h3>
+            </div>
+
+            <div className="text-right">
+              <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-[#6366F1] to-[#06B6D4]">
+                {progress}%
+              </span>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Global Pipeline Progress Bar */}
+          <div className="w-full bg-[#080D18] rounded-full h-4 border border-[#1E293B] overflow-hidden p-0.5">
+            <div
+              className={`h-3 rounded-full transition-all duration-700 ${
+                status === 'FAILED'
+                  ? 'bg-[#EF4444]'
+                  : status === 'COMPLETED'
+                  ? 'bg-[#22C55E]'
+                  : 'bg-gradient-to-r from-[#6366F1] via-[#06B6D4] to-[#22C55E]'
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {/* Error notification if failed */}
+          {status === 'FAILED' && (
+            <div className="p-4 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-start gap-3 text-sm text-[#EF4444]">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block">Pipeline Execution Failed</span>
+                <p className="text-xs mt-1 text-slate-300">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Grid: 11 Pipeline Stages Breakdown + Live Terminal Log */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Stages Checklist (Left column) */}
-        <div className="lg:col-span-5 bg-[#111827] border border-[#1E293B] rounded-2xl p-5 shadow-xl space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-bold text-white">11-Stage Inspection Pipeline</h4>
-            <span className="text-[10px] font-mono text-[#06B6D4]">Sequential</span>
-          </div>
-
-          <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
+        <Card className="lg:col-span-5 border-[#1E293B] bg-[#0E1424]">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-bold">11-Stage Inspection Pipeline</CardTitle>
+            <Badge variant="cyan">Sequential</Badge>
+          </CardHeader>
+          <CardContent className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
             {pipelineStages.map((stage) => {
               const isDone = progress >= stage.threshold;
               const isCurrent = !isDone && progress >= stage.threshold - 15;
@@ -267,51 +266,55 @@ export const ProcessingPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Live Terminal Log Output (Right column) */}
-        <div className="lg:col-span-7 bg-[#080D18] border border-[#1E293B] rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-                <Terminal className="w-4 h-4 text-[#06B6D4]" />
-                <span>Forensic Engine Event Stream</span>
+        <Card className="lg:col-span-7 border-[#1E293B] bg-[#080D18] flex flex-col justify-between">
+          <CardContent className="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-[#1E293B] mb-3">
+                <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
+                  <Terminal className="w-4 h-4 text-[#06B6D4]" />
+                  <span>Forensic Engine Event Stream</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyLogText}
+                    className="text-[10px] py-1 px-2.5"
+                  >
+                    {copiedLogs ? <Check className="w-3 h-3 text-[#22C55E] mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                    <span>{copiedLogs ? 'Copied' : 'Copy'}</span>
+                  </Button>
+                  <span className="text-[10px] font-mono text-slate-500">{logs.length} events</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={copyLogText}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#111827] border border-[#1E293B] hover:bg-[#1E293B] text-[10px] font-mono text-slate-300 transition-colors"
-                >
-                  {copiedLogs ? <Check className="w-3 h-3 text-[#22C55E]" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedLogs ? 'Copied' : 'Copy'}</span>
-                </button>
-                <span className="text-[10px] font-mono text-slate-500">{logs.length} events</span>
+
+              <div className="bg-black/50 rounded-xl p-4 font-mono text-xs overflow-y-auto max-h-[380px] space-y-2 border border-white/5">
+                {logs.length === 0 ? (
+                  <p className="text-slate-600 italic">Connecting to background task worker...</p>
+                ) : (
+                  logs.map((log, index) => (
+                    <div key={index} className="flex items-start gap-2.5 leading-relaxed">
+                      <span className="text-slate-600 shrink-0 text-[11px]">[{log.timestamp}]</span>
+                      <span className="text-[#06B6D4] shrink-0 font-bold text-[11px]">
+                        {log.progress.toString().padStart(3, ' ')}%
+                      </span>
+                      <span className="text-slate-300 text-[11px]">{log.message}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
-            <div className="bg-black/50 rounded-xl p-4 font-mono text-xs overflow-y-auto max-h-[380px] space-y-2 border border-white/5">
-              {logs.length === 0 ? (
-                <p className="text-slate-600 italic">Connecting to background task worker...</p>
-              ) : (
-                logs.map((log, index) => (
-                  <div key={index} className="flex items-start gap-2.5 leading-relaxed">
-                    <span className="text-slate-600 shrink-0 text-[11px]">[{log.timestamp}]</span>
-                    <span className="text-[#06B6D4] shrink-0 font-bold text-[11px]">
-                      {log.progress.toString().padStart(3, ' ')}%
-                    </span>
-                    <span className="text-slate-300 text-[11px]">{log.message}</span>
-                  </div>
-                ))
-              )}
+            <div className="pt-4 border-t border-[#1E293B] mt-4 flex items-center justify-between text-[11px] font-mono text-slate-500">
+              <span>Status: <strong className="text-slate-300 uppercase">{status}</strong></span>
+              <span>Orchestrator: <strong className="text-[#06B6D4]">FastAPI Worker Thread</strong></span>
             </div>
-          </div>
-
-          <div className="pt-4 border-t border-[#1E293B] mt-4 flex items-center justify-between text-[11px] font-mono text-slate-500">
-            <span>Status: <strong className="text-slate-300 uppercase">{status}</strong></span>
-            <span>Orchestrator: <strong className="text-[#06B6D4]">FastAPI Worker Thread</strong></span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ from backend.app.models.media import MediaFile
 from backend.app.models.analysis import AnalysisJob
 from backend.app.schemas.media import MediaUploadResponse, MediaFileResponse
 from backend.app.core.config import settings
-from backend.app.core.security import validate_file_extension, generate_secure_filename, calculate_sha256
+from backend.app.core.security import validate_file_extension, validate_file_signature, generate_secure_filename, calculate_sha256
 from backend.app.services.audit_service import audit_service
 from backend.app.core.logging import logger
 
@@ -43,7 +43,12 @@ def upload_media(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=f"File exceeds maximum allowed size of {settings.MAX_UPLOAD_SIZE_MB} MB."
             )
+
+        # Validate magic byte binary signature to prevent MIME spoofing
+        validate_file_signature(dest_path, ext)
     except HTTPException:
+        if os.path.exists(dest_path):
+            os.remove(dest_path)
         raise
     except Exception as e:
         if os.path.exists(dest_path):
@@ -121,6 +126,7 @@ def upload_media(
         media=MediaFileResponse(
             id=media_record.id,
             original_filename=media_record.original_filename,
+            stored_filename=media_record.stored_filename,
             file_type=media_record.file_type,
             file_size=media_record.file_size,
             file_hash=media_record.file_hash,
